@@ -7,34 +7,32 @@ from django.views import View
 from django.shortcuts import render, redirect
 from .forms import CustomUserCreationForm
 
-
-
 from django.shortcuts import render
 from user_access.models import Vehicle
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
-
 from django.views.generic import TemplateView
+
 
 class HomeView(TemplateView):
     template_name = 'home.html'
 
-
+#to see list of vehicles
 class VehicleListView(LoginRequiredMixin, ListView):
     model = Vehicle
     template_name = 'list.html'
     context_object_name = 'vehicles'
     login_url = '/login/'
 
-
+#view to display details
 class VehicleDetailView(LoginRequiredMixin, DetailView):
     model = Vehicle
     template_name = 'detail.html'
     context_object_name = 'vehicle'
     login_url = '/login/'
 
-
+#view to create vehicle
 class VehicleCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Vehicle
     template_name = 'create.html'
@@ -46,7 +44,7 @@ class VehicleCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def test_func(self):
         return self.request.user.user_type in ['Super admin', 'Admin']
 
-
+#view to update vehicle
 class VehicleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Vehicle
     template_name = 'vehicle_management/update.html'
@@ -58,7 +56,7 @@ class VehicleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         return self.request.user.user_type in ['Super admin', 'Admin']
 
-
+#view to delete vehicle
 class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Vehicle
     template_name = 'vehicle_management/delete.html'
@@ -71,7 +69,7 @@ class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 
-
+#view to userlogin
 class UserLoginView(View):
     def get(self, request):
         return render(request, 'login.html')
@@ -104,7 +102,7 @@ class UserLoginView(View):
                 return redirect(create_url)
         return HttpResponse("Invalid login details.....")
 
-
+#view to signup for user
 class UserSignupView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'user_signup.html'
@@ -114,7 +112,7 @@ class UserSignupView(CreateView):
         form.instance.is_user = True
         return super().form_valid(form)
 
-
+#signup for superadmin
 class SuperAdminSignupView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'superadmin_signup.html'
@@ -124,7 +122,7 @@ class SuperAdminSignupView(CreateView):
         form.instance.is_superadmin = True
         return super().form_valid(form)
 
-
+#signup for admin
 class AdminSignupView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'adminsignup.html'
@@ -136,7 +134,7 @@ class AdminSignupView(CreateView):
 
 
 
-
+#view for logout
 class UserLogoutView(View):
     def get(self, request):
         logout(request)
