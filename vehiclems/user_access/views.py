@@ -18,21 +18,21 @@ from django.views.generic import TemplateView
 class HomeView(TemplateView):
     template_name = 'home.html'
 
-#to see list of vehicles
+# to see list of vehicles
 class VehicleListView(LoginRequiredMixin, ListView):
     model = Vehicle
     template_name = 'list.html'
     context_object_name = 'vehicles'
     login_url = '/login/'
 
-#view to display details
+# view to display details
 class VehicleDetailView(LoginRequiredMixin, DetailView):
     model = Vehicle
     template_name = 'detail.html'
     context_object_name = 'vehicle'
     login_url = '/login/'
 
-#view to create vehicle
+# view to create vehicle
 class VehicleCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Vehicle
     template_name = 'create.html'
@@ -44,7 +44,7 @@ class VehicleCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def test_func(self):
         return self.request.user.user_type in ['Super admin', 'Admin']
 
-#view to update vehicle
+# view to update vehicle
 class VehicleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Vehicle
     template_name = 'vehicle_management/update.html'
@@ -56,7 +56,7 @@ class VehicleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         return self.request.user.user_type in ['Super admin', 'Admin']
 
-#view to delete vehicle
+# view to delete vehicle
 class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Vehicle
     template_name = 'vehicle_management/delete.html'
@@ -67,9 +67,7 @@ class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.request.user.user_type == 'Super admin'
 
-
-
-#view to userlogin
+# view to user login
 class UserLoginView(View):
     def get(self, request):
         return render(request, 'login.html')
@@ -87,20 +85,14 @@ class UserLoginView(View):
                 return redirect(vehicle_list_url)  # Redirect to VehicleListView
             elif user.is_admin:
                 login(request, user)
-                vehicle_list_url = reverse('vehiclelist')  # Generate URL for VehicleListView
-                detail_url = reverse('detail')  # Generate URL for VehicleDetailView
-                update_url=reverse('update')    # Generate URL for VehicleUpdateView
-                return redirect(update_url)  # Redirect to VehicleListView
-                # return redirect(detail_url)
+                update_url = reverse('update')    # Generate URL for VehicleUpdateView
+                return redirect(update_url)  # Redirect to VehicleUpdateView
             elif user.is_superadmin:
                 login(request, user)
-                vehicle_list_url = reverse('vehiclelist')  # Generate URL for VehicleListView
-                detail_url = reverse('detail')  # Generate URL for VehicleDetailView
-                update_url = reverse('update')
-                delete_url=reverse(('delete'))
-                create_url=reverse('create')
-                return redirect(create_url)
+                create_url = reverse('create')  # Generate URL for VehicleCreateView
+                return redirect(create_url)  # Redirect to VehicleCreateView
         return HttpResponse("Invalid login details.....")
+
 
 #view to signup for user
 class UserSignupView(CreateView):
