@@ -8,11 +8,12 @@ from django.shortcuts import render, redirect
 from .forms import CustomUserCreationForm
 
 from django.shortcuts import render
-from user_access.models import Vehicle
+from user_access.models import User,Vehicle
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.views.generic import TemplateView
+from django.contrib.auth.views import LoginView
 
 
 class HomeView(TemplateView):
@@ -68,7 +69,7 @@ class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user.user_type == 'Super admin'
 
 # view to user login
-class UserLoginView(View):
+class UserLoginView(LoginView):
     def get(self, request):
         return render(request, 'login.html')
 
@@ -80,16 +81,16 @@ class UserLoginView(View):
         if user:
             if user.is_user:
                 login(request, user)
-                vehicle_list_url = reverse('vehiclelist')
-                detail_url = reverse('detail')
+                vehicle_list_url = reverse('user_access:vehiclelist')
+                detail_url = reverse('user_access:detail')
                 return redirect(vehicle_list_url)  # Redirect to VehicleListView
             elif user.is_admin:
                 login(request, user)
-                update_url = reverse('update')    # Generate URL for VehicleUpdateView
+                update_url = reverse('user_access:update')    # Generate URL for VehicleUpdateView
                 return redirect(update_url)  # Redirect to VehicleUpdateView
             elif user.is_superadmin:
                 login(request, user)
-                create_url = reverse('create')  # Generate URL for VehicleCreateView
+                create_url = reverse('user_access:create')  # Generate URL for VehicleCreateView
                 return redirect(create_url)  # Redirect to VehicleCreateView
         return HttpResponse("Invalid login details.....")
 

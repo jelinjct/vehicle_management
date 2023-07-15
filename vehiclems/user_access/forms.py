@@ -11,4 +11,4 @@ class UserLoginForm(forms.Form):
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
-        fields = UserCreationForm.Meta.fields + ('username','password','email',)
+        fields = UserCreationForm.Meta.fields
