@@ -13,7 +13,14 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, D
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.views.generic import TemplateView
-from django.contrib.auth.views import LoginView
+from django.views.generic.edit import ProcessFormView
+
+from django.contrib.auth import authenticate, login
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views.generic.edit import FormView
+from django.contrib.auth.forms import AuthenticationForm
 
 
 class HomeView(TemplateView):
@@ -38,7 +45,7 @@ class VehicleCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Vehicle
     template_name = 'create.html'
     fields = ['vehicle_number', 'vehicle_type', 'vehicle_model', 'vehicle_description']
-    success_url = reverse_lazy('vehicle_management:list')
+    success_url = reverse_lazy('user_access:vehiclelist')
     login_url = '/login/'
     permission_denied_message = 'Unauthorized Access'
 
@@ -50,7 +57,7 @@ class VehicleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Vehicle
     template_name = 'vehicle_management/update.html'
     fields = ['vehicle_number', 'vehicle_type', 'vehicle_model', 'vehicle_description']
-    success_url = reverse_lazy('vehicle_management:list')
+    success_url = reverse_lazy('user_access:vehiclelist')
     login_url = '/login/'
     permission_denied_message = 'Unauthorized Access'
 
@@ -61,7 +68,7 @@ class VehicleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Vehicle
     template_name = 'vehicle_management/delete.html'
-    success_url = reverse_lazy('vehicle_management:list')
+    success_url = reverse_lazy('user_access:vehiclelist')
     login_url = '/login/'
     permission_denied_message = 'Unauthorized Access'
 
@@ -69,30 +76,34 @@ class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user.user_type == 'Super admin'
 
 # view to user login
-class UserLoginView(LoginView):
-    def get(self, request):
-        return render(request, 'login.html')
 
-    def post(self, request):
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(username=username, password=password)
+class UserLoginView(FormView):
+    template_name = 'login.html'
+    form_class = AuthenticationForm
+
+    def form_valid(self, form):
+        username = form.cleaned_data.get('username')
+        password = form.cleaned_data.get('password')
+        user = authenticate(self.request, username=username, password=password)
 
         if user:
-            if user.is_user:
-                login(request, user)
-                vehicle_list_url = reverse('user_access:vehiclelist')
-                detail_url = reverse('user_access:detail')
-                return redirect(vehicle_list_url)  # Redirect to VehicleListView
-            elif user.is_admin:
-                login(request, user)
-                update_url = reverse('user_access:update')    # Generate URL for VehicleUpdateView
+
+            if user.user_type == 'User':
+                login(self.request, user)
+                vehicle_detail_url = reverse('user_access:detail')
+                detail_url = reverse('user_access:vehiclelist')
+                return redirect(vehicle_detail_url)  # Redirect to VehicleListView
+            elif user.user_type == 'Admin':
+                login(self.request, user)
+                update_url = reverse('user_access:update')  # Generate URL for VehicleUpdateView
                 return redirect(update_url)  # Redirect to VehicleUpdateView
-            elif user.is_superadmin:
-                login(request, user)
+            elif user.user_type == 'Super admin':
+                login(self.request, user)
                 create_url = reverse('user_access:create')  # Generate URL for VehicleCreateView
                 return redirect(create_url)  # Redirect to VehicleCreateView
+
         return HttpResponse("Invalid login details.....")
+
 
 
 #view to signup for user
@@ -102,7 +113,9 @@ class UserSignupView(CreateView):
     success_url = reverse_lazy('user_access:home')
 
     def form_valid(self, form):
-        form.instance.is_user = True
+        user = form.save(commit=False)
+        user.user_type = 'User'  # Set the user_type to 'User'
+        user.save()
         return super().form_valid(form)
 
 #signup for superadmin
@@ -112,7 +125,9 @@ class SuperAdminSignupView(CreateView):
     success_url = reverse_lazy('user_access:home')
 
     def form_valid(self, form):
-        form.instance.is_superadmin = True
+        user = form.save(commit=False)
+        user.user_type = 'Super admin'  # Set the user_type to 'Super admin'
+        user.save()
         return super().form_valid(form)
 
 #signup for admin
@@ -122,7 +137,9 @@ class AdminSignupView(CreateView):
     success_url = reverse_lazy('user_access:home')
 
     def form_valid(self, form):
-        form.instance.is_admin = True
+        user = form.save(commit=False)
+        user.user_type = 'Admin'  # Set the user_type to 'Admin'
+        user.save()
         return super().form_valid(form)
 
 
