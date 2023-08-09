@@ -1,11 +1,14 @@
 {% extends 'base2.html' %}
 
 {% block content %}
-  <h1>Vehicle List</h1>
+  <h1>Vehicle List For Users</h1>
   {% if vehicles %}
     <ul>
       {% for vehicle in vehicles %}
-        <li>{{ vehicle.vehicle_number }} - {{ vehicle.vehicle_type }}</li>
+        <li>{{ vehicle.vehicle_number }} - {{ vehicle.vehicle_type }}
+             <a href="{% url 'app1:detail' vehicle.pk %}">view</a>
+        </li>
+
       {% endfor %}
     </ul>
   {% else %}

@@ -1,21 +1,16 @@
 
-from django.urls import reverse
-from django.contrib.auth import logout
-from django.http import HttpResponse
-from django.contrib.auth import authenticate, login
 from django.views import View
-from django.shortcuts import render, redirect
-from .forms import CustomUserCreationForm
+from app1.forms import CustomUserCreationForm
 
-from django.shortcuts import render
-from user_access.models import User,Vehicle
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
+from django.contrib.auth.views import LogoutView
+from app1.models import User1,Vehicle,UserAccess
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView ,TemplateView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
-from django.views.generic import TemplateView
-from django.views.generic.edit import ProcessFormView
 
-from django.contrib.auth import authenticate, login
+
+
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -23,13 +18,29 @@ from django.views.generic.edit import FormView
 from django.contrib.auth.forms import AuthenticationForm
 
 
+
+class FrontView(TemplateView):
+    template_name = 'front_webpage.html'
 class HomeView(TemplateView):
     template_name = 'home.html'
 
-# to see list of vehicles
+# to see list of vehicles for Super admin
 class VehicleListView(LoginRequiredMixin, ListView):
     model = Vehicle
-    template_name = 'list.html'
+    template_name = 'list-view_owner.html'
+    context_object_name = 'vehicles'
+    login_url = '/login/'
+
+# to see list of vehicles for User(has view option)
+class VehicleList1View(LoginRequiredMixin, ListView):
+    model = Vehicle
+    template_name = 'list_view_user.html'
+    context_object_name = 'vehicles'
+    login_url = '/login/'
+#to see list of vehicles for admin
+class VehicleList3View(LoginRequiredMixin, ListView):
+    model = Vehicle
+    template_name = 'list_view_staff.html'
     context_object_name = 'vehicles'
     login_url = '/login/'
 
@@ -40,40 +51,52 @@ class VehicleDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'vehicle'
     login_url = '/login/'
 
+    def get_success_url(self):
+        return reverse_lazy('app1:detail', kwargs={'pk': self.object.pk})
+
+
 # view to create vehicle
 class VehicleCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Vehicle
     template_name = 'create.html'
     fields = ['vehicle_number', 'vehicle_type', 'vehicle_model', 'vehicle_description']
-    success_url = reverse_lazy('user_access:vehiclelist')
+    success_url = reverse_lazy('app1:home')
     login_url = '/login/'
     permission_denied_message = 'Unauthorized Access'
 
     def test_func(self):
-        return self.request.user.user_type in ['Super admin', 'Admin']
+        return self.request.user.user_type in ['Super admin']
+    def form_valid(self, form):
+        # Set the current user as the owner of the vehicle being created
+        form.instance.vehicle = self.request.user
+        return super().form_valid(form)
+
 
 # view to update vehicle
 class VehicleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Vehicle
-    template_name = 'vehicle_management/update.html'
+    template_name = 'update.html'
     fields = ['vehicle_number', 'vehicle_type', 'vehicle_model', 'vehicle_description']
-    success_url = reverse_lazy('user_access:vehiclelist')
+    success_url = reverse_lazy('app1:home')
     login_url = '/login/'
     permission_denied_message = 'Unauthorized Access'
 
     def test_func(self):
         return self.request.user.user_type in ['Super admin', 'Admin']
 
+    def get_success_url(self):
+        return reverse_lazy('app1:home')
+
 # view to delete vehicle
 class VehicleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Vehicle
-    template_name = 'vehicle_management/delete.html'
-    success_url = reverse_lazy('user_access:vehiclelist')
+    template_name = 'delete.html'
+    success_url = reverse_lazy('app1:home')
     login_url = '/login/'
     permission_denied_message = 'Unauthorized Access'
-
     def test_func(self):
-        return self.request.user.user_type == 'Super admin'
+        return self.request.user.user_type in ['Super admin']
+
 
 # view to user login
 
@@ -86,21 +109,20 @@ class UserLoginView(FormView):
         password = form.cleaned_data.get('password')
         user = authenticate(self.request, username=username, password=password)
 
-        if user:
 
+        if user:
             if user.user_type == 'User':
-                login(self.request, user)
-                vehicle_detail_url = reverse('user_access:detail')
-                detail_url = reverse('user_access:vehiclelist')
-                return redirect(vehicle_detail_url)  # Redirect to VehicleListView
+                    login(self.request, user)
+                    list1_url = reverse('app1:home')
+                    return redirect(list1_url)  # Redirect to Vehiclelist1View
             elif user.user_type == 'Admin':
-                login(self.request, user)
-                update_url = reverse('user_access:update')  # Generate URL for VehicleUpdateView
-                return redirect(update_url)  # Redirect to VehicleUpdateView
+                    login(self.request, user)
+                    list_url = reverse('app1:home')
+                    return redirect(list_url)  # Redirect to VehicleList3View
             elif user.user_type == 'Super admin':
-                login(self.request, user)
-                create_url = reverse('user_access:create')  # Generate URL for VehicleCreateView
-                return redirect(create_url)  # Redirect to VehicleCreateView
+                    login(self.request, user)
+                    create_url = reverse('app1:home')
+                    return redirect(create_url)  # Redirect to VehicleCreateView
 
         return HttpResponse("Invalid login details.....")
 
@@ -110,7 +132,7 @@ class UserLoginView(FormView):
 class UserSignupView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'user_signup.html'
-    success_url = reverse_lazy('user_access:home')
+    success_url = reverse_lazy('app1:frontpage')
 
     def form_valid(self, form):
         user = form.save(commit=False)
@@ -122,7 +144,7 @@ class UserSignupView(CreateView):
 class SuperAdminSignupView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'superadmin_signup.html'
-    success_url = reverse_lazy('user_access:home')
+    success_url = reverse_lazy('app1:frontpage')
 
     def form_valid(self, form):
         user = form.save(commit=False)
@@ -134,7 +156,7 @@ class SuperAdminSignupView(CreateView):
 class AdminSignupView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'adminsignup.html'
-    success_url = reverse_lazy('user_access:home')
+    success_url = reverse_lazy('app1:frontpage')
 
     def form_valid(self, form):
         user = form.save(commit=False)
@@ -144,8 +166,11 @@ class AdminSignupView(CreateView):
 
 
 
-#view for logout
-class UserLogoutView(View):
+# view for logout
+class UserLogoutView(LogoutView):
     def get(self, request):
         logout(request)
-        return redirect(HomeView.as_view())
+        logout_url = reverse('app1:frontpage')
+        return redirect(logout_url)
+
+

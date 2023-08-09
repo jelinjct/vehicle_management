@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'user_access',
+    'app1',
 
 
 ]
@@ -73,8 +73,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'vehiclems.wsgi.application'
 
-AUTH_USER_MODEL = 'user_access.User'
-LOGIN_URL='user_acess:userlogin'
+AUTH_USER_MODEL = 'app1.User1'
+LOGIN_URL='user_acess:login'
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
